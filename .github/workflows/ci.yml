@@ -12,6 +12,7 @@ jobs:
           node-version: '22'
       - name: Build output
         run: |
+          npm install
           npm install -g cowel@0.7.0
           npm run build
       - uses: actions/upload-pages-artifact@v3
