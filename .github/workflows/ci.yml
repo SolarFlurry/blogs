@@ -1,0 +1,20 @@
+name: CI
+on: [push]
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node.JS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build output
+        run: |
+          npm install -g cowel@0.7.0
+          npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+      - uses: actions/deploy-pages@v4

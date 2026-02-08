@@ -1,0 +1,134 @@
+\cowel_include("include/post.cow")\
+
+\title{Comparing modern syntax: Rust vs Go}
+\date{Jan 29, 2026}
+
+Both Rust and Go are famous modern programming languages, but to me, some of their syntax choices feel a bit... strange.
+
+Let's look at some first impressions:
+
+Rust:
+\codeblock(rust){
+pub fn main() {
+  println!("Hello, world!");
+}
+}
+Go:
+\codeblock(go){
+package main
+
+import "fmt"
+
+func main() {
+  fmt.Println("Hello, world!)
+}
+}
+
+Looking at this code, if I didn't know \i{any} Rust or Go, I would think Go is a very verbose language, with like \code(go){package main}
+and stuff. Rust looks much more... simple. Spoiler (for those who don't know Rust or Go): It's the opposite.
+
+Rust is built around a few core principles:
+\ul{
+  \li{Guaranteed memory safety at compile time}
+  \li{Zero-cost abstractions (I hear this one a lot)}
+  \li{Fearless concurrency}
+}
+
+Go, on the other hand, has quite different principles:
+\ul{
+  \li{Simplicty and readability}
+  \li{First-class concurrency}
+  \li{Performance}
+}
+
+Go is a language with a garbage collector, as well as a runtime which helps it manage its lightweight 'goroutines'.
+Rust guarantees memory safety \i{without} a garbage collector, through strict ownership rules enforced at compile time.
+
+\heading{Rusty code}
+You may have heard people say this phrase before, or something similar. What exactly does it refer to? Probably because the syntax of Rust is
+incredibly distinct, so let's have a look at some Rusty code. (This snippet is from \ref("https://doc.rust-lang.org/book/"){The Rust Book})
+
+\codeblock(rust){
+use std::cmp::Ordering;
+use std::io;
+
+use rand::Rng;
+
+fn main() {
+  println!("Guess the number!");
+
+  let secret_number = rand::thread_rng().gen_range(1..=100);
+
+  loop {
+    println!("Please input your guess.");
+
+    let mut guess = String::new();
+
+    io::stdin()
+      .read_line(&mut guess)
+      .expect("Failed to read line");
+
+    let guess: u32 = match guess.trim().parse() {
+      Ok(num) => num,
+      Err(_) => continue,
+    };
+
+    println!("You guessed: {guess}");
+
+    match guess.cmp(&secret_number) {
+      Ordering::Less => println!("Too small!"),
+      Ordering::Greater => println!("Too big!"),
+      Ordering::Equal => {
+        println!("You win!");
+        break;
+      }
+    }
+  }
+}
+}
+
+One of the elements that make Rust code 'Rusty' is (in my opinion) the match expression. They are basically a more powerful version of
+C/C++ style switch statements, with pattern matching and blah blah blah. They are distinct for using the \code(rust){=>} symbol, as well as having
+enum patterns, such as \code(rust){Ordering::Less} and \code(rust){Err(_)}.
+
+You can see Rust uses the \code(rust){use} keyword to import external \code(rust){crate}s/namespaces/etc.
+
+\heading{Go equivalent}
+I'm going to create an equivelent program in Go:
+
+\codeblock(go){
+package main
+
+import (
+  "fmt"
+  "log"
+  "math/rand/v2"
+)
+
+func main() {
+  fmt.Println("Guess the number!")
+
+  secretNumber := rand.IntN(101)
+
+  for {
+    fmt.Println("Please input your guess.")
+
+    var guess int
+    _, err := fmt.Scanln(&guess)
+    if err != nil {
+      continue
+    }
+
+    fmt.Printf("You guessed: %d\\n", guess)
+    switch {
+      case guess < secretNumber:
+        fmt.Println("Too small!)
+      case guess > secretNumber:
+        fmt.Println("Too big!)
+      case guess == secretNumber:
+        fmt.Println("You win!)
+        return
+    }
+  }
+}
+}

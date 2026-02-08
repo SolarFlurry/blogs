@@ -1,0 +1,30 @@
+\style{
+:root {
+	font-family: "Noto Sans", sans-serif;
+	font-weight: 300;
+}
+code, code-block {
+	font-variant-ligatures: common-ligatures;
+}
+body {
+	font-size: 1.2rem;
+}
+#date {
+	font-size: 1.5rem;
+	color: #979797;
+}
+h1 {
+	font-weight: 400;
+	margin-bottom: 0;
+}
+}
+
+\cowel_macro(title){
+\there("std.head"){
+\cowel_html_element(title){\cowel_put}
+}
+\h1{\cowel_put}
+}
+\cowel_macro(date){\div(id=date){\cowel_put}}
+
+\cowel_macro(heading){\h2(listed=false){\cowel_put}}

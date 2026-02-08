@@ -1,0 +1,137 @@
+\cowel_include("include/post.cow")\
+
+\title{The TypeScript `match` expression}
+\date{Feb 8, 2026}
+
+Rust's \code(rust){match} expression is amazing. It was inspired by ML family languages like Haskell and OCaml, and languages like Zig and Swift
+are also adopting it. Then I look at the go-to scripting language, TypeScript, and think: "Man, if only TypeScript had this".
+Well, it sort of does, with 50-year old C-style \code(ts){switch} statements. But these have many flaws, with not being expressions
+one of them.
+
+So, why not create a match expression in TypeScript? Here is some mockup syntax:
+\codeblock(ts){
+const a = "hello";
+
+const b = match(a, {
+    "hello": () => 7,
+    "world": () => 42,
+})
+
+console.log(b) // Output: 7
+}
+
+I find this syntax kind of close to Rust, with the \code(rust){=>}.
+The reason it uses functions and not direct values is that sometimes some additional info may be passed into the function,
+like with Rust enum destructuring, though that is for another day.
+
+Obviously, this requires a \code(rust){match} function.
+\codeblock(ts){
+export function match(value: any, cases: any): any {
+    return cases[value]();
+}
+}
+
+This works, but it has a few problems:
+\ol{
+    \li{It does not ensure all branches return the same type, which is not ideal for TypeScript}
+    \li{It doesn't ensure the cases for each branch are the same type}
+    \li{What if the matching value doesn't exist? Ideally this should have some sort of exhaustive checking, as well as an else clause.}
+}
+
+\heading{Problem 1}
+
+So, let's first focus on problem 1. This can be solved with generics and a compound type:
+\codeblock(ts){
+type MatchCases<T> = {
+    [key: string]: (...args: any[]) => T
+}
+
+export function match<T>(value: any, cases: MatchCases<T>): T {
+    return cases[value]();
+}
+}
+
+\Bnote{Objects in JavaScript are always indexed with strings, even arrays.}
+This, however, will cause a compiler error, because \code(ts){value} may not always be a string!
+Ideally, we want this to work for both strings and numbers.
+
+We can define an type for \code(ts){value} that ensures it is a string or number and update the \code(ts){match}
+function to convert \code(ts){value} to a string.
+\codeblock(ts){
+type MatchValue = number | string;
+
+export function match<T>(value: MatchValue, cases: MatchCases<T>): T {
+    return cases[value.toString()]();
+}
+}
+
+\heading{Problem 2}
+
+The next problem is that the types of the branches may differ. This is a relatively easy fix for TypeScript.
+We only need to introduce a new generic argument to ensure all of them would be the same at compile time.
+\codeblock(ts){
+type MatchValue = number | string;
+
+type MatchCases<K extends number | string, R> = {
+    [key in K]: (...args: any[]) => R
+}
+
+export function match<T extends MatchValue, R>(value: T, cases: MatchCases<T, R>): R {
+    return cases[value]();
+}
+}
+
+\heading{Problem 3}
+
+Rust \code(rust){match} expressions ensure exhaustiveness, meaning all possible values for the matched value
+should have an associated branch. Because \code(ts){string}s and \code(ts){number}s have (basically) an infinite
+range of possible values, we need to introduce an else clause. The syntax looks like this in Rust
+(this example is from the \ref("https://https://doc.rust-lang.org/book/ch06-02-match.html"){Rust Book}):
+\codeblock(rust){
+let dice_roll = 9;
+match dice_roll {
+    3 => add_fancy_hat(),
+    7 => remove_fancy_hat(),
+    _ => reroll(),
+}
+}
+
+We cannot just use a '_' key, because if we match a string with a value of \code(ts){'_'}, it would be matched by the '_' key.
+The solution is to use \ref("https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol"){Symbols}.
+In short, Symbols values that are always unique, and can be used as object keys. We can define one like this:
+\codeblock(ts){
+export const _ = Symbol("Used as an else branch for `MatchCases`")
+}
+This means that nothing will be able to access `\code(ts){_}` except for `\code(ts){_}` itself.
+Then we can ensure that there will always be a `\code(ts){_}` inside \code(ts){MatchCases},
+and implement functionality in the main \code(ts){match} function:
+
+\codeblock(ts){
+type MatchCases<K extends number | string, R> = {
+    [key in K]: (...args: any[]) => R;
+} & {
+    [_]: () => R
+}
+
+export function match<T extends MatchValue, R>(value: T, cases: MatchCases<T, R>): R {
+	const branch = cases[value];
+	if (!branch) {
+		return cases[_]();
+	}
+	return branch();
+}
+}
+
+This is how you would use it:
+\codeblock(ts){
+const a: string = "hello world";
+
+const b = match(a, {
+    "hello": () => 7,
+    "world": () => 64,
+    [_]: () => 42,
+})
+}
+
+Now we have a \code(rust){match} expression, in TypeScript, with typechecking and crude 'exhaustiveness' checking. But
+it works, in <20 LoC! In the future I would like to expand this with Rust-like enums.

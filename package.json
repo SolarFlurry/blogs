@@ -1,0 +1,17 @@
+{
+  "name": "blogs",
+  "version": "1.0.0",
+  "description": "All my blogs stuff",
+  "main": "build/index.js",
+  "private": true,
+  "scripts": {
+    "build": "tsc && node ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^25.1.0"
+  }
+}
