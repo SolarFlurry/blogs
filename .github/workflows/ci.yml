@@ -1,5 +1,7 @@
 name: CI
-on: [push]
+on:
+  push:
+    branches: [main]
 jobs:
   CI:
     runs-on: ubuntu-latest
@@ -15,7 +17,9 @@ jobs:
           npm install
           npm install -g cowel@0.7.0
           npm run build
-      - uses: actions/upload-pages-artifact@v3
+      - name: Upload Pages Artifacts
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
-      - uses: actions/deploy-pages@v4
+      - name: Deploy
+        uses: actions/deploy-pages@v4
