@@ -8,6 +8,8 @@ are also adopting it. Then I look at the go-to scripting language, TypeScript, a
 Well, it sort of does, with 50-year old C-style \code(ts){switch} statements. But these have many flaws, with not being expressions
 one of them.
 
+\edit{Haskell is actually not an ML-family language, but it was inspired by them}
+
 So, why not create a match expression in TypeScript? Here is some mockup syntax:
 \codeblock(ts){
 const a = "hello";
@@ -98,7 +100,7 @@ match dice_roll {
 
 We cannot just use a '_' key, because if we match a string with a value of \code(ts){'_'}, it would be matched by the '_' key.
 The solution is to use \ref("https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol"){Symbols}.
-In short, Symbols values that are always unique, and can be used as object keys. We can define one like this:
+In short, Symbols are values that are always unique, and can be used as object keys. We can define one like this:
 \codeblock(ts){
 export const _ = Symbol("Used as an else branch for `MatchCases`")
 }
@@ -134,4 +136,4 @@ const b = match(a, {
 }
 
 Now we have a \code(rust){match} expression, in TypeScript, with typechecking and crude 'exhaustiveness' checking. But
-it works, in <20 LoC! In the future I would like to expand this with Rust-like enums.
+it works, in <20 LoC! In the future I would like to expand this with Rust-like enums (or Union Algebraic Data Types).

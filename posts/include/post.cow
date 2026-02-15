@@ -17,6 +17,10 @@ h1 {
 	font-weight: 400;
 	margin-bottom: 0;
 }
+
+span.post-edit {
+	font-size: 1rem;
+}
 }
 
 \cowel_macro(title){
@@ -28,3 +32,5 @@ h1 {
 \cowel_macro(date){\div(id=date){\cowel_put}}
 
 \cowel_macro(heading){\h2(listed=false){\cowel_put}}
+\cowel_macro(edit){\cowel_html_element(span, (class = "post-edit")){EDIT: \cowel_put}}
+\cowel_macro(link){\cowel_html_element(a, (href = cowel_put{0})){\cowel_put}}

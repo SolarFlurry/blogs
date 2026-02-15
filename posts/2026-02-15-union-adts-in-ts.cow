@@ -1,0 +1,168 @@
+\cowel_include("include/post.cow")\
+
+\title{Union Algebraic Data Types in TS}
+\date{Feb 15, 2026}
+
+A union algebraic data type (or ADT) is a specific operation on algebraic data types, which combines multiple types into
+1 type, where only one of those types can be active at a time.
+
+C/C++ uses the \code(cpp){union} declarator to define Union ADTs:
+
+\codeblock(cpp){
+union FooBar {
+    int foo;
+    float bar;
+}
+}
+
+If we assign to the \code(cpp){foo} field, than the \code(cpp){bar} field becomes invalid. Both fields share
+the same memory space. Accessing an invalid field results in undefined behavior, as there is no way to see as to which
+field is currently active.
+
+We can solve this problem with tagged unions. Zig gives an easy and obvious syntax for tagged unions:
+
+\codeblock(zig){
+const FooBar = union(enum) {
+    foo: u32,
+    bar: f64,
+}
+}
+
+Zig uses an enum to store which variant is currently active. This is known as the 'tag', and it is the reason
+it is called a 'tagged union'.
+
+Rust, however, abstracts away the underlying fact that it is a union:
+
+\codeblock(rust){
+enum FooBar {
+    Foo(u32),
+    Bar(f64),
+}
+}
+
+You can see there is no mention of 'union' anywhere in the Rust example. Rust is basically saying: "Enums \i{are}
+union ADTs."
+
+Our goal is to recreate this tagged union pattern in TypeScript, making it as intuitive and easy to use as possible.
+TypeScript already supports union types like this:
+
+\codeblock(ts){
+type FooBar = number | string;
+}
+
+We just need to somehow append a tag onto it. This is actually pretty common in TypeScript. It is done like this:
+
+\codeblock(ts){
+type Foo = {
+    tag: "Foo",
+    value: number,
+}
+type Bar = {
+    tag: "Bar",
+    value: string,
+}
+
+type FooBar = Foo | Bar;
+}
+
+But this is ugly! I want an easy way to define it, as intuitive as Rust enums or Zig unions. Perhaps something like this:
+\codeblock(ts){
+type FooBar = Enum<{
+    Foo: number,
+    Bar: string,
+}>;
+}
+
+And it automatically constructs our wanted type, so ideally \code(ts){type FooBar} should be equal to:
+\codeblock(ts){
+type FooBar = {
+    tag: "Foo",
+    value: number,
+} | {
+    tag: "Bar",
+    value: string,
+}
+}
+
+Alright, lets define our \code(ts){Enum} type constructor. First, we need a structure for our generic input. An enum variant
+has to be a valid name, but because we cannot check that at compile time with TypeScript, we can just use any string as an
+enum variant name. The structure would look like:
+
+\codeblock(ts){
+type EnumDescriptor = Record<string, any>;
+}
+
+Yep, pretty simple. We specify \code(ts){any} as the inner value of an enum variant could be \i{any} value.
+The enum type would then expect a generic argument with this \code(ts){EnumDescriptor} type.
+
+TypeScript supports mapping keys from an object type to another object type. We can map keys from the generic argument to
+a template:
+\codeblock(ts){
+{
+    tag: string, // the key
+    value: any // the value corresponding to the key
+}
+}
+
+We can then define our enum type like this:
+\codeblock(ts){
+type Enum<T extends EnumDescriptor> {
+    [K in keyof T]: {
+        tag: K,
+        value: T[K]
+    }
+}
+}
+
+You can see the template within this definition.
+
+This, however, does not construct our desired type. Because we are mapping keys to our template type, the resultant type
+would basically have keys corresponding to the ones of the input type, instead of being a union. We have actually constructed
+another variant of an ADT, with the product or AND operation (also known as a product type). This is actually the more common
+variant of an ADT. Structs, classes, arrays, tuples are all instances of this type of ADT.
+
+The product ADT we have constructed with \code(ts){Enum} looks like this:
+
+\codeblock(ts){
+type FooBar = {
+    Foo: {
+        tag: "Foo",
+        value: number,
+    },
+    Bar: {
+        tag: "Bar",
+        value: string,
+    }
+}
+}
+
+We want to somehow union together all the keys of this. Luckily, TypeScript has a way. Indexing a type with a union type will
+automatically union together all of the corresponding fields. For example:
+\codeblock(ts){
+type FooBarBaz = {
+    Foo: number,
+    Bar: string,
+    Baz: boolean,
+}
+
+type FooBar = FooBarBaz["Foo" | "Bar"] // number | string
+type BarBaz = FooBarBaz["Bar" | "Baz"] // string | boolean
+type FooBaz = FooBarBAz["Foo" | "Baz"] // number | boolean
+}
+
+TypeScript also gives use the \code(ts){keyof} operator to get a union of all a type's keys. This means it is as simple as adding
+\code(ts){[keyof T]} to our \code(ts){Enum} type.
+
+\codeblock(ts){
+type Enum<T extends EnumDescriptor> {
+    [K in keyof T]: { tag: K, value: T[K] }
+}[keyof T]
+}
+
+And voilà! With this, we have succesfully created a type constructor for tagged unions.
+The next step would be combining this with \link("./2026-02-08-ts-match-expr.html"){the TS match expression}
+to create true Rust-like pattern matching in TypeScript!
+
+In case you don't want to do it yourself (which you should attempt, it's a nice challenge exploring the extent of TypeScript's
+powerful type system), I already have another blog planned for combining these tagged unions with the \code(rust){match}
+expression.
