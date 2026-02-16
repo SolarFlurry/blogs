@@ -15,15 +15,16 @@ fs.readdir("./posts", {withFileTypes: true}, (err, entries) => {
 		process.exit(1);
 	}
 
-	const posts: {title: string, date: string, link: string}[] = [];
-
 	Promise.all(entries
 		.filter(entry => entry.isFile())
 		.filter(entry => entry.name.endsWith(".cow"))
+		.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+		.reverse()
 		.map(entry => {
 			const file = path.join("./posts", entry.name);
 			const output = path.join(OUT_PATH, entry.name.replace(".cow", ".html"));
-			return new Promise((resolve, reject) => {
+			return new Promise<{title: string, date: string, link: string}>
+				((resolve, reject) => {
 				const cowelProcess = spawn("cowel", ["run", file, output])
 				// cowelProcess.stderr?.pipe(process.stderr);
 				// cowelProcess.stdout?.pipe(process.stdout);
@@ -37,12 +38,11 @@ fs.readdir("./posts", {withFileTypes: true}, (err, entries) => {
 					const contents = fs.readFileSync(output, { encoding: 'utf8' });
 					const title = <string>contents.match(/<title>(.*)<\/title>/)?.[1];
 					const date = <string>contents.match(/<div id=date>(.*)<\/div>/)?.[1];
-					posts.push({title, date, link: entry.name.replace(".cow", ".html")})
-					resolve(code);
+					resolve({title, date, link: entry.name.replace(".cow", ".html")});
 				})
 			})
 		})
-	).then(() => {
+	).then((posts) => {
 		const index = `\
 <p class="middle" style="font-size:3rem;font-weight:100;">Blog</p>
 <div class="middle" id="projects-list" style="top:3rem;">${
