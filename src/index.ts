@@ -14,6 +14,9 @@ fs.readdir("./posts", {withFileTypes: true}, (err, entries) => {
 		console.error("error fetching from ./posts");
 		process.exit(1);
 	}
+
+	const posts: {title: string, date: string, link: string}[] = [];
+
 	Promise.all(entries
 		.filter(entry => entry.isFile())
 		.filter(entry => entry.name.endsWith(".cow"))
@@ -22,8 +25,8 @@ fs.readdir("./posts", {withFileTypes: true}, (err, entries) => {
 			const output = path.join(OUT_PATH, entry.name.replace(".cow", ".html"));
 			return new Promise((resolve, reject) => {
 				const cowelProcess = spawn("cowel", ["run", file, output])
-				cowelProcess.stderr?.pipe(process.stderr);
-				cowelProcess.stdout?.pipe(process.stdout);
+				// cowelProcess.stderr?.pipe(process.stderr);
+				// cowelProcess.stdout?.pipe(process.stdout);
 
 				cowelProcess.on('error', (err) => {
 					reject();
@@ -31,11 +34,29 @@ fs.readdir("./posts", {withFileTypes: true}, (err, entries) => {
 				})
 
 				cowelProcess.on('exit', (code, signal) => {
+					const contents = fs.readFileSync(output, { encoding: 'utf8' });
+					const title = <string>contents.match(/<title>(.*)<\/title>/)?.[1];
+					const date = <string>contents.match(/<div id=date>(.*)<\/div>/)?.[1];
+					posts.push({title, date, link: entry.name})
 					resolve(code);
 				})
 			})
 		})
 	).then(() => {
+		const index = `\
+<p class="middle" style="font-size:3rem;font-weight:100;">Blog</p>
+<div class="middle" id="projects-list" style="top:3rem;">
+${
+	posts.map((post) =>
+		`\
+	<div class="glass project">
+		<p class="heading"><a href="${post.link}">${post.title}</a></p>
+		<p>${post.date}</p>
+	</div>`
+	)
+}
+</div>`
+		fs.writeFileSync(path.join(OUT_PATH, 'out.html'), index, {encoding: 'utf8'})
 		console.log("build finished");
 	})
 })
