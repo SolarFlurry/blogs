@@ -45,15 +45,14 @@ fs.readdir("./posts", {withFileTypes: true}, (err, entries) => {
 	).then(() => {
 		const index = `\
 <p class="middle" style="font-size:3rem;font-weight:100;">Blog</p>
-<div class="middle" id="projects-list" style="top:3rem;">
-${
+<div class="middle" id="projects-list" style="top:3rem;">${
 	posts.map((post) =>
-		`\
+		`
 	<div class="glass project">
 		<p class="heading"><a href="${post.link}">${post.title}</a></p>
 		<p>${post.date}</p>
 	</div>`
-	)
+	).reduce((prev, current) => prev + current, "")
 }
 </div>`
 		fs.writeFileSync(path.join(OUT_PATH, 'out.html'), index, {encoding: 'utf8'})
