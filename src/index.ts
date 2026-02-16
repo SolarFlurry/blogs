@@ -37,7 +37,7 @@ fs.readdir("./posts", {withFileTypes: true}, (err, entries) => {
 					const contents = fs.readFileSync(output, { encoding: 'utf8' });
 					const title = <string>contents.match(/<title>(.*)<\/title>/)?.[1];
 					const date = <string>contents.match(/<div id=date>(.*)<\/div>/)?.[1];
-					posts.push({title, date, link: entry.name})
+					posts.push({title, date, link: entry.name.replace(".cow", ".html")})
 					resolve(code);
 				})
 			})
