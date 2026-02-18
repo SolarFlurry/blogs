@@ -18,15 +18,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-      - name: Setup Node.JS
-        uses: actions/setup-node@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
         with:
-          node-version: '22'
-      - name: Build output
+          deno-version: lts
+      - name: Build
         run: |
-          npm install
-          npm install -g cowel@0.7.0
-          npm run build
+          deno install --global --allow-all npm:cowel
+          deno run --allow-read=. --allow-write=./out --allow-run=cowel build.ts
       - name: Upload Pages Artifacts
         uses: actions/upload-pages-artifact@v3
         with:
