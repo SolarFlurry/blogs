@@ -1,0 +1,87 @@
+\cowel_include("include/post.cow")\
+
+\title{On Fighting Compilers}
+\date{Feb 22, 2026}
+\there("std.head"){
+\style{
+@import url('https://fonts.googleapis.com/css2?family=Rubik+Wet+Paint&display=swap');
+.worst-language-ever {
+	color: red;
+	font-family: "Rubik Wet Paint";
+}
+}
+}
+
+Recently I have been learning Zig, and I realised how much I \i{hate} compilers. Of course, without
+compilers, we would not be able to transform our highly readable source code into the complete hell
+(for humans) that is machine code. The reason I am bringing this up with Zig is because I had an
+all-out battle with the Zig compiler on something completely unexpected.
+
+When you compile your code, and you recieve like 5 errors, it is certainly not the best feeling,
+especially when you thought your code was perfect. The cycle goes like this:
+
+\ol{
+	\li{Compile the code. (\code(cpp){zig build})}
+	\li{Read the many compile errors.}
+	\li{Edit some lines of code.}
+	\li{Repeat.}
+}
+
+\heading{Postulates}
+
+I like to imagine myself in a battle, or at least some kind of skirmish, fighting against the machine
+that is the compiler. I remember reading \i{I, Robot}, in which there was a sentient robot (QT) which
+insisted against humans that Earth did not exist and that humans were a lower form of life compared
+to robots. The robot had fundamentally different postulates, or the initial foundational 'bricks' in
+which all your arguments are based upon. For example, in geometry, it is assumed that there is only 1
+shortest line between 2 points. This is a postulate.
+
+In this case, the Zig compiler and I had different postulates. The Zig compiler is very explicit,
+to the fact that the type of integer literals is literally \code(zig){comptime_int}, and you need to
+put \code(zig){@intCast} everywhere to ensure the integer types are correct. There is no integer
+coercion in Zig, and the \code(zig){@intCast} can lead to very verbose code. I, on the other hand, was
+used to type coercion between integer types, and a equation-solving type inference engine, unlike
+Zig's Result Location Semantics (RLS). Zig also has it's revolutionary comptime feature, as well as
+encouraging dependency injection, like in it's allocators or Reader and Writer interfaces. I was not
+used to these patterns that were ingrained into the Zig compiler and standard library.
+
+So, what was the issue I had with the Zig compiler? As I said before, it was completely unexpected.
+Examine this expression:
+
+\codeblock(zig){
+((@as(u64, 1) << @as(u6, @intCast(a - b))) & c) > 0
+}
+
+Zig has many integer types, in the example you can see a standard \code(zig){u64}, but also a random
+\code(zig){u6}, because shifting a 64-bit integer requires at most a 6-bit integer.
+
+I won't describe the issue, but I will say Clang++ is less finicky in the bit shifting regard. You can
+see by how complicated the expression is how much pain it caused me. A lot. I also won't describe what
+I was trying to achieve, try browsing my GitHub repos for this expression. (Hint: as of writing this,
+I only have one Zig project)
+
+\heading{Maturity}
+
+Many people associated "fighting a compiler" with the Rust borrow checker. I can relate to this, as I
+have "fought" with the borrow checker before, but usually I can just google an answer. Because Zig is less
+mature than Rust, it was harder to find an answer to my problem, and so I struggled harder with the simpler
+Zig problem than the complicated lifetime Rust problems. Rust is an incredibly popular language, ranking
+high in both admired and desired in the Stack Overflow Developer's Survey 2025. This naturally means
+that more people have encountered the same style of errors before, and would have solutions for them.
+
+In contrast, Zig is relatively new language, bootstrapped only in 2022. It's standard library is also
+constantly changing, such as the new \code(zig){Io} interface and the migration of asynchrony and
+concurrency from the compiler to the standard library. The maturity of a language plays a role in
+a war against a compiler.
+
+\heading{Conclusion}
+
+Obviously a difference in postulates and the maturity of a language are not the \i{only} deciders on
+the "fighting strength" of a compiler. I could talk about obscure compile-time features like metaprogramming
+in TypeScript, which requires quite a but of googling. I could also talk about the \i{lack} of errors,
+like in dynamic programming languages like \cowel_html_element(span, (class = "worst-language-ever")){Python}
+or Javascript.
+
+However, compiler errors save you from a whole tonne of stuff. Take Rust, for example. The borrow checker
+gives you quite a bit of protection against memory leaks and other issues. The Zig compiler also checks
+for ignored error values, and both Rust and Zig have exhaustiveness checking in switch/match expressions.
