@@ -14,7 +14,7 @@ don't know what Brainfuck is, or what operators do in it, just search it up. The
 of guides online.
 
 So, let's start with a simple exercise, printing a single character, \c{'#'}. This character
-has the ASCII code 35, which can be broken down to \c{3 * 5}. Thus, we can write:
+has the ASCII code 35, which can be broken down to \c{7 * 5}. Thus, we can write:
 
 \c{>+++++[-<+++++++>]<.}
 
