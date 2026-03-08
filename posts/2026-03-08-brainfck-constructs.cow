@@ -5,7 +5,7 @@
 \cowel_macro(n){\\n}\
 
 \title{Brainfck Constructs}
-\date{Feb 22, 2026}
+\date{March 8, 2026}
 
 I have come across many tutorials for Brainfuck, but all they do is explain the effects of the
 different operators, and implement a simple 'Hello, world!'. In this post, I intend to go further,
@@ -151,7 +151,7 @@ the inner loop's counter, we have effectively \i{moved} the outer counter to a n
 what we want is \i{copying}, not moving.
 
 However, copying can be achieved with 2 moves. The first moves the source to 2 locations. Then, the
-second moves one of those 2 locations \i{back} to the source. The code looks liek this:
+second moves one of those 2 locations \i{back} to the source. The code looks like this:
 
 \cb{
 [- // decrement
