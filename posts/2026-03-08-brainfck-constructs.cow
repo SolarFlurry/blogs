@@ -1,0 +1,327 @@
+\cowel_include("include/post.cow")\
+\cowel_macro(c){\code(c){\cowel_put}}\
+\cowel_macro(cb){\codeblock(c){\cowel_put}}\
+\cowel_macro(dgram){\codeblock(nolang, borders = false){\cowel_put}}\
+\cowel_macro(n){\\n}\
+
+\title{Brainfck Constructs}
+\date{Feb 22, 2026}
+
+I have come across many tutorials for Brainfuck, but all they do is explain the effects of the
+different operators, and implement a simple 'Hello, world!'. In this post, I intend to go further,
+explaining different programming constructs in Brainfuck, such as loops and conditionals. If you
+don't know what Brainfuck is, or what operators do in it, just search it up. There are hundreds
+of guides online.
+
+So, let's start with a simple exercise, printing a single character, \c{'#'}. This character
+has the ASCII code 35, which can be broken down to \c{3 * 5}. Thus, we can write:
+
+\c{>+++++[-<+++++++>]<.}
+
+If you don't understand what I just did, please read beginner Brainfuck guides before reading this.
+
+\heading{Looping Construct}
+
+Alright! Now, we can start doing out first construct. Let's output 20 of these hashtags. Sure, we
+could repeat '\c{.}' 20 times, but thats hardcoded and less flexible than adding a loop!
+
+A normal \c{for} loop requires 1 integer value. If we have a look what a for loop looks like,
+but with only a while loop and with a post-\i{decrement} instead of a post-increment (because in
+Brainfuck \c{0}s are the only conditionally checked values), it looks like this:
+
+\cb{
+int i = N // where N is the number of loops to do
+while (i != 0) {
+    /* ... */
+    i--;
+}
+}
+
+In Brainfuck, we can represent the integer as a single cell value. The C code maps to the following
+Brainfuck:
+
+\cb{
+// set cell value to N
+++++++++ [ // while loop
+
+// do code stuff here
+
+-] // post decrement
+}
+
+It is important to note that whatever cell the data pointer was pointing to at the start of the loop,
+needs to be the one its pointing to at the \i{end} as well. This is an important rule when programming
+in Brainfuck: ensure nothing changes before and after a loop.
+
+So, we can now print the hashtag 20 times with this loop!
+
+\cb{
+>+++++[<+++++++>-]<
+>>+++++[<++++>-]<[
+    <.>
+-]
+}
+
+Take some time to reason about this code. I will briefly explain the lines:
+\ol{
+    \li{Load the \c{'#'} into cell 0}
+    \li{Load 20 into cell 1}
+    \li{Output the \c{'#'}}
+    \li{Decrement}
+}
+
+Another thing we could change is from a post-decrement into a pre-decrement. This means instead of the
+value going \c{20...1}, it would go \c{19...0}. This subtle change reflects the actual
+behavior of for loops at least a bit more closely.
+
+\heading{Scopes}
+
+Now, it's time to create a 2D image! Let's output a 20x20 square of \c{'#'}. We can just nest a
+loop within a loop. However, before we write the code, I want to talk about scopes.
+
+Our 20x20 'image' requires 2 characters: \c{'#'} and a newline. We can load these two characters
+to the first 2 cells of our program. The next cell would contain the loop counter for the first
+outer loop.
+
+This is where scopes come in. Whenever we have conditionally executed code, it requires some scope
+awareness. And because the only conditional operators are '\c{[}' and '\c{]}', scopes
+are delimited by these operators. If you do not know what a scope is, go read some beginner
+programming guides.
+
+The first 3 cells contain values that are part of the 'global' scope. They can always be accessed,
+and will never become invalid. Typically, scope grows towards the right. This means that within our
+first loop, we can access the hashtag, newline and loop counter of the outer loop. We can also
+access the loop counter of the inner loop in cell 3. Cell 3 is the beginning of the scope of the
+outer loop. The inner loop has no values.
+
+We can draw a diagram of scope:
+
+\dgram{
+         Outer Loop
+            ╭─┴─╮
+┌───┬───┬───┬───┐
+│ 0 │ 1 │ 2 │ 3 │
+└───┴───┴───┴───┘
+╰─────┬─────╯
+Global Scope
+}
+
+The inner loop is not represented as there are no values inside it's scope.
+
+It is important that when exiting a scope, it preserves the same state as when it entered the scope.
+What this means is that the inner scope should not modify the data pointer, or any of the upper
+scope's data, as well as resetting all it's own data back to 0. However, sometimes you may need
+to modify the values of an outer scope. An example of this is a loop. It modifies the loop counter,
+to give it a terminating condition.
+
+The code to load the \c{'#'} is also a loop, as well as loading \c{20}. If you look at
+it closely:
+
+\c{>+++++[-<+++++++>]<}
+
+It is just a loop in one line. However, it does something a bit weird. It first moves to the \i{next}
+cell, puts the loop counter there, and modifies the cell \i{before} it.
+
+Armed with our scope awareness, we can write a program to output a 20x20 square of \c{'#'}!
+
+\cb{
+>+++++[-<+++++++>] // load '#'
+>+++++[-<++>] // load newline
+
+// loop y
+>+++++[<++++>-]<[-
+    // loop x
+    >>+++++[<++++>-]<[-
+        // output '#'
+        <<<.>>>
+    ]<
+    // output newline
+    <.>
+]
+}
+
+\heading{Copying & Moving}
+
+What if we wanted to make a triangle? An easy way to do this would be to put 20 hashtags on the first
+line, then 19, 18, 17, ..., 1.
+
+To do this, we would have to first copy the outer loop's counter to the cell of the inner loop's
+counter. If we subtract all from the outer loop's counter and then while subtracting \i{add} to
+the inner loop's counter, we have effectively \i{moved} the outer counter to a new cell. However,
+what we want is \i{copying}, not moving.
+
+However, copying can be achieved with 2 moves. The first moves the source to 2 locations. Then, the
+second moves one of those 2 locations \i{back} to the source. The code looks liek this:
+
+\cb{
+[- // decrement
+    >+ // add to desination 1
+    >+ // add to desination 2
+    << // move back (remember the preservation rule!)
+]
+>>
+[-
+    <<+ // add back to source
+    >> // preservation rule
+]
+}
+
+This can be compacted into this:
+
+\c{[->+>+<<]>>[-<<+>>]}
+
+With this, we can write our triangle code!
+
+\cb{
+>+++++[-<+++++++>] // load '#'
+>+++++[-<++>] // load newline
+
+// loop y
+>+++++[<++++>-]<[-
+    // loop x
+    [->+>+<<]>>[-<<+>>]< // copy loop y's counter
+    [-
+        // output '#'
+        <<<.>>>
+    ]<
+    // output newline
+    <.>
+]
+}
+
+\heading{If-else branching construct}
+
+The if construct is actually pretty straightforward. Brainfuck executes code \i{if} not zero. This
+means that \c{0} is the false value in Brainfuck. But if we want to execute code if a condition,
+then we want some expressions that return boolean values. So let's implement an equality operator.
+
+We just want to loop on one value, then subtract from the other value. If the result is \c{0}, then,
+well... it's \c{0}. That means this is actually an \i{in}equality operator. But that is more or less
+the same. Assuming cell 0-1 are the sources, and cell 2 is the destination:
+
+\cb{
+[->>+>+<<<]>>>[-<<<+>>>] // copy cell 0 to 2
+<<
+[->>+>+<<<]>>>[-<<<+>>>] // copy cell 1 to 3
+<[- // loop counter is cell 3
+    <->
+]< // result in cell 2
+}
+
+Ok, so our new project now is to create a filled 20x20 square with a diagonal line of spaces across
+it. At every output, we need to decide whether we should output \c{'#'} or \c{' '}. This can be done
+by checking if the x and y loop counters are equal.
+
+But, how do we conditionally execute code on a \c{0} or nonzero? We need an if-else construct. Just
+plain \c{if} is easy. All we need to do is make a loop, but ensure it doesnt, well, loop. Pretty
+easy, just add to the condition, which we already know is \c{0}. Assuming the start of the program
+is on the cell of the condition:
+
+\cb{
+[
+    // code stuff here
+[-]]
+}
+
+This looks even simpler than a loop! But that's just because I never showed you the true structure
+of a loop before. Quick sidetrack, a bare loop looks like this:
+
+\cb{
+[-
+    // code stuff here
+]
+}
+
+Continuing our sidetrack, compacting a bare loop gives us what I call a 'pseudo-operator'. This
+operator '\c{[-]}' sets the current cell to \c{0}.
+
+Alright, back on track. We have an \c{if} construct, but no \c{else}. We can use another cell to
+keep track of whether the if clause ran or not. If it didn't, then we can run the else. The
+preservation rule is very important here. Both the if and else clause should end with the same
+data pointer. Otherwise, everything just gets completely messed up.
+
+\cb{
+>+<[>- // minuses to the condition for else, so else won't run
+    // if clause
+<[-]]>
+[ // check the else condition
+    // else clause
+[-]] // set else condition to 0
+}
+
+You can see how it always ends on the else condition. This is required, as it is the preservation
+rule. You can see how at the end of both clauses, it adds to the condition, which is known to be
+\c{0} to ensure it doesn't loop back.
+
+A diagram would help us visualise our data and it's locations:
+
+\dgram{
+                                        Outer Loop
+                                       ╭────┴─────╮
+┌────────┬────────┬─────────┬──────────┬──────────┬───────────┬─────────────┐
+│ 0: '#' │ 1: ' ' │ 2: '\n' │ 3: loopY │ 4: loopX │ 5: ifCond │ 6: elseCond │
+└────────┴────────┴─────────┴──────────┴──────────┴───────────┴─────────────┘
+╰───────────────────┬──────────────────╯          ╰────────────┬────────────╯
+              Global Scope                                Inner Loop
+}
+
+The reason \c{ifCond} and \c{elseCond} is inside the Inner Loop scope and not a seperate If and Else
+scope is the same reason a loop counter is not inside it's own loop's scope, and also because of the
+preservation rule, in that the if clause must end pointing to elseCond, and the else clause also has
+to end pointing to elseCond.
+
+\cb{
+>+++++[-<+++++++>] // load '#'
+>++++[-<++++++++>] // load ' '
+>+++++[-<++>] // load '\n'
+
+// loop y
+>+++++[<++++>-]<[-
+    // loop x
+    >>+++++[<++++>-]<[-
+        <[->>+>+<<<]>>>[-<<<+>>>]< // copy loopY
+        <[->>+>+<<<]>>>[-<<<+>>>]< // copy loopX
+        [-<->]+<[>- // if loopX != loopY
+            <<<<<<.>>>>>> // output '#'
+        <[-]]>[ // else
+            <<<<<.>>>>> // output ' '
+        [-]]<<
+    ]<
+    // output '\n'
+    <.>
+]
+}
+
+We now have a successful Brainfuck program that can print this:
+
+\dgram{
+ ###################
+# ##################
+## #################
+### ################
+#### ###############
+##### ##############
+###### #############
+####### ############
+######## ###########
+######### ##########
+########## #########
+########### ########
+############ #######
+############# ######
+############## #####
+############### ####
+################ ###
+################# ##
+################## #
+###################
+}
+
+Maybe not very impressive. But it utilises some common programming constructs, made with Brainfuck,
+like loops and if-else branching. Now you can try making some cool things in Brainfuck! Try creating
+addition, subtraction, multiplication and division. Make something that can output Brainfuck values
+as a string, or make a fibonacci calculator. Or just get on with regular programming and forget about
+this guide. You can do that too.
+
+Anyways, thanks for reading my guide, I used an interpreter I wrote to run the Brainfuck programs in
+this guide.

@@ -1,3 +1,4 @@
+#!/usr/bin/env -S deno run --allow-read=. --allow-write=./out --allow-run=cowel build.ts
 import path from 'node:path'
 import { exists } from 'jsr:@std/fs@1.0.22/exists'
 
