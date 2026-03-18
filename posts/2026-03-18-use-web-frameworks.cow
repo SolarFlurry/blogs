@@ -1,0 +1,72 @@
+\cowel_include("include/post.cow")\
+
+\title{Use Web Frameworks!}
+\date{March 3 2026}
+
+When creating an interactive web application, use web frameworks! If you don't, either you'll end
+with a spaghetti codebase which doesn't allow for easy modification, or create your own crappy web
+framework. Speaking from experience.
+
+Here's an example from one of my crappy projects which created a custom crappy 'web framework':
+
+\codeblock(ts){
+root.setMenuBar(new MenuBar([
+    new MenuBarItem('File', [
+        new MenuBarOption("New", () => { }),
+        new MenuBarOption("Open File", () => { }),
+        new MenuBarDivider(),
+        new MenuBarOption("Save As", () => { }),
+        new MenuBarOption("Export", () => { })
+    ]),
+    new MenuBarItem('Edit', [
+        new MenuBarOption("Undo", () => { }),
+        new MenuBarOption("Redo", () => { }),
+        new MenuBarDivider(),
+        new MenuBarOption("Cut", () => { }),
+        new MenuBarOption("Copy", () => {
+            const from = codeEditor.view.state.selection.main.from;
+            const to = codeEditor.view.state.selection.main.to;
+            const selectedText = codeEditor.view.state.sliceDoc(from, to);
+            navigator.clipboard.writeText(selectedText)
+        }),
+        new MenuBarOption("Paste", () => { }),
+    ]),
+    new MenuBarItem('Settings', []),
+]))
+
+root.add(
+    new HorizontalLayout(
+        [
+            new PaddingControl(codeEditor, "1rem", { minWidth: '0' }),
+            new PaddingControl(new VerticalLayout([
+                new HorizontalLayout([
+                    new ButtonComponent("Compile", () => {
+                        compile(codeEditor.view.state.doc.toString(), errorList);
+                    }),
+                    new ButtonComponent("Export", () => {
+                        const file = new Blob([codeEditor.view.state.doc.toString()], { type: 'text/plain' });
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(file);
+                        a.download = 'assembly.txt';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(a.href);
+                    }),
+                    new ButtonComponent("Load", () => { })
+                ], [1, 1, 1]),
+                errorList,
+            ], ["3rem", "calc(100vh - 8rem)"], {height: "100%"}), "1rem")
+        ],
+        [5, 2]
+    )
+)
+}
+
+Either you will invent some crappy web framework kind of thing or just end up with a spaghetti codebase.
+This would be much cleaner if I used Svelte!
+
+I don't usually like talking about web development, I'm more of a language features/compilers guy.
+
+Moral: Use a web framework! Don't think you can get away with simple HTML and JS. It's already not
+as bad for me because I used Vite. Seriously, use a web framework.

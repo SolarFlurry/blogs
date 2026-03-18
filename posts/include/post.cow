@@ -1,6 +1,6 @@
 \style{
 :root {
-	font-family: "Noto Sans", sans-serif;
+	/*font-family: "Noto Sans", sans-serif;*/
 	font-weight: 300;
 }
 code, code-block {
